@@ -15,7 +15,7 @@ LOGGER = logging.getLogger(__name__)
 
 class DataRequest:
     # control byte
-    # source adddress
+    # source address
     #
     # destination address
     #
@@ -205,7 +205,7 @@ class DataRequest:
 class ExtendedDataRequest:
     # control byte
     # extended control byte
-    # source adddress
+    # source address
     #
     # destination address
     #
@@ -444,7 +444,7 @@ class ExtendedDataRequest:
 
 class PollDataRequest:
     # control byte
-    # source adddress
+    # source address
     #
     # destination address
     #

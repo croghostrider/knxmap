@@ -147,7 +147,7 @@ class KnxTunnelConnection(asyncio.DatagramProtocol):
                 del self.target_futures[target]
         elif isinstance(value, KnxMessage):
             # If value is a KnxMessage itself,
-            # jsut add it to the response_queue.
+            # just add it to the response_queue.
             self.response_queue.append(value)
         elif knx_msg and isinstance(knx_msg, KnxMessage):
             # If knx_msg is set, append it to
@@ -231,7 +231,7 @@ class KnxTunnelConnection(asyncio.DatagramProtocol):
                     if knx_msg.data:
                         LOGGER.debug(CEMI_ERROR_CODES.get(knx_msg.data[0]))
                     else:
-                        LOGGER.debug("An unknown error occured")
+                        LOGGER.debug("An unknown error occurred")
                     self.process_target(knx_msg.source, False, knx_msg)
                 else:
                     self.process_target(knx_msg.source, knx_msg)
@@ -399,7 +399,7 @@ class KnxTunnelConnection(asyncio.DatagramProtocol):
             # TODO: do we have to increase any sequence here?
             LOGGER.debug("Tunnelling ACK received")
             if knx_msg.status:
-                LOGGER.error("An error occured during frame transmission")
+                LOGGER.error("An error occurred during frame transmission")
         else:
             LOGGER.error(
                 f"Unknown Tunnelling Service message: {knx_msg.header.get('service_type')}"
