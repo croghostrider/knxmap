@@ -273,7 +273,7 @@ class KnxTunnellingRequest(KnxMessage):
         cemi = CemiFrame()
         cemi = cemi.pack()
         data = bytearray(struct.pack('!B', memory_address))
-        data.extend(struct.pack('!{}s'.format(len(data)), data))
+        data.extend(struct.pack(f'!{len(data)}s', data))
         data_request = ExtendedDataRequest(knx_source=self.knx_source,
                                            knx_destination=self.knx_destination,
                                            tpci_type='NDP',

@@ -16,10 +16,7 @@ class Apci(object):
         self.data = data
 
     def __repr__(self):
-        return '%s apci_type: %s, apci_data: %s' % (
-            self.__class__.__name__,
-            _CEMI_APCI_TYPES.get(self.apci_type),
-            self.apci_data)
+        return f'{self.__class__.__name__} apci_type: {_CEMI_APCI_TYPES.get(self.apci_type)}, apci_data: {self.apci_data}'
 
     @staticmethod
     def _unpack_stream(fmt, stream):
@@ -33,7 +30,6 @@ class Apci(object):
         # TODO: nasty hacks
         apci = 0
         apci_type_len = len(bin(self.apci_type)[2:])
-        data_space = 10 - apci_type_len
         if apci_type_len <= 4:
             while len(bin(self.apci_type)[2:]) < 8:
                 self.apci_type *= 2
@@ -43,11 +39,12 @@ class Apci(object):
         apci |= self.apci_type << 0
         if self.apci_data:
             i = 0
+            data_space = 10 - apci_type_len
             while data_space > 0:
                 apci |= ((self.apci_data >> i) & 1) << i
                 i += 1
                 data_space -= 1
-            #apci |= self.apci_data << 0
+                #apci |= self.apci_data << 0
         #apci = struct.pack('!H', apci)
         return apci
 

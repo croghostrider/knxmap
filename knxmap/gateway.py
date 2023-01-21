@@ -38,8 +38,7 @@ class KnxGatewaySearch(asyncio.DatagramProtocol):
         self.transport.get_extra_info('socket').sendto(packet, (self.multicast_addr, self.port))
 
     def datagram_received(self, data, addr):
-        knx_message = parse_message(data)
-        if knx_message:
+        if knx_message := parse_message(data):
             knx_message.set_peer(addr)
             LOGGER.trace_incoming(knx_message)
             if isinstance(knx_message, KnxSearchResponse):
@@ -85,8 +84,7 @@ class KnxGatewayDescription(asyncio.DatagramProtocol):
     def datagram_received(self, data, addr):
         self.wait.cancel()
         self.transport.close()
-        knx_message = parse_message(data)
-        if knx_message:
+        if knx_message := parse_message(data):
             knx_message.set_peer(addr)
             LOGGER.trace_incoming(knx_message)
             if isinstance(knx_message, KnxDescriptionResponse):
