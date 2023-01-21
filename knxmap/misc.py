@@ -10,33 +10,37 @@ TRACE_LOG_LEVEL = 9
 
 def simple_hexdump(data):
     """Simple hexdump function if no proper module is available."""
-    data = codecs.encode(data, 'hex')
-    hex = ''
-    for i in [data[i:i + 16] for i in range(0, len(data), 16)]:
-        for j in [i[j:j + 2] for j in range(0, len(i), 2)]:
-            hex += f'0x{j.decode().upper()} '
-        hex += '\n'
+    data = codecs.encode(data, "hex")
+    hex = ""
+    for i in [data[i : i + 16] for i in range(0, len(data), 16)]:
+        for j in [i[j : j + 2] for j in range(0, len(i), 2)]:
+            hex += f"0x{j.decode().upper()} "
+        hex += "\n"
     return hex
 
 
 try:
     from helperlib.binary import hexdump as helperlib_hexdump
+
     def hexdump(data):
-        return '\n'.join(helperlib_hexdump(data)) + '\n'
+        return "\n".join(helperlib_hexdump(data)) + "\n"
+
 except ImportError:
     try:
         from hexdump import hexdump as hexdump_hexdump
+
         def hexdump(data):
-            return hexdump_hexdump(data, result='return') + '\n'
+            return hexdump_hexdump(data, result="return") + "\n"
+
     except ImportError:
         hexdump = simple_hexdump
 
 
-def trace_incoming(self, message, direction='IN'):
+def trace_incoming(self, message, direction="IN"):
     return trace_packet(self, message, direction=direction)
 
 
-def trace_outgoing(self, message, direction='OUT'):
+def trace_outgoing(self, message, direction="OUT"):
     return trace_packet(self, message, direction=direction)
 
 
@@ -45,21 +49,21 @@ def trace_packet(self, message, *args, **kwargs):
     information about packets."""
     if not LOGGER.isEnabledFor(TRACE_LOG_LEVEL):
         return
-    direction = kwargs.get('direction')
-    if direction and direction in ['IN', 1]:
-        direction = '<<<<<<<<<< [INCOMING] <<<<<<<<<<'
-    elif direction and direction in ['OUT', 0]:
-        direction = '>>>>>>>>>> [OUTGOING] >>>>>>>>>>'
+    direction = kwargs.get("direction")
+    if direction and direction in ["IN", 1]:
+        direction = "<<<<<<<<<< [INCOMING] <<<<<<<<<<"
+    elif direction and direction in ["OUT", 0]:
+        direction = ">>>>>>>>>> [OUTGOING] >>>>>>>>>>"
     else:
-        direction = ''
-    output = '[PACKET TRACE]'
+        direction = ""
+    output = "[PACKET TRACE]"
     if isinstance(message, KnxMessage):
-        output += f' {str(message)}'
+        output += f" {str(message)}"
         message = message.message
     elif isinstance(message, KnxHidReport):
-        output += f' {str(message)}'
+        output += f" {str(message)}"
         message = message.report
-    output += '\n' + direction + '\n'
+    output += "\n" + direction + "\n"
     output += hexdump(message)
     output += direction
     LOGGER._log(TRACE_LOG_LEVEL, output, args)
@@ -67,8 +71,12 @@ def trace_packet(self, message, *args, **kwargs):
 
 def setup_logger(level):
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG, TRACE_LOG_LEVEL]
-    log_format = '[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s' if level > 2 else '%(message)s'
-    logging.addLevelName(TRACE_LOG_LEVEL, 'TRACE')
+    log_format = (
+        "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+        if level > 2
+        else "%(message)s"
+    )
+    logging.addLevelName(TRACE_LOG_LEVEL, "TRACE")
     logging.Logger.trace = trace_packet
     logging.Logger.trace_incoming = trace_incoming
     logging.Logger.trace_outgoing = trace_outgoing

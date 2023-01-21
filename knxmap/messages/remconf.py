@@ -1,9 +1,10 @@
 """Remote Diagnostics and Configuration"""
 import io
-import struct
 import logging
+import struct
 
-from knxmap import KNX_MESSAGE_TYPES, _LAYER_TYPES, KNX_STATUS_CODES
+from knxmap import KNX_MESSAGE_TYPES
+
 from .main import KnxMessage
 
 LOGGER = logging.getLogger(__name__)
@@ -11,12 +12,14 @@ LOGGER = logging.getLogger(__name__)
 
 class KnxRemoteDiagnosticRequest(KnxMessage):
     def __init__(self, message=None, sockname=None):
-        super(KnxRemoteDiagnosticRequest, self).__init__()
+        super().__init__()
         if message:
             self.message = message
             self.unpack_knx_message(message)
         else:
-            self.header['service_type'] = KNX_MESSAGE_TYPES.get('REMOTE_DIAGNOSTIC_REQUEST')
+            self.header["service_type"] = KNX_MESSAGE_TYPES.get(
+                "REMOTE_DIAGNOSTIC_REQUEST"
+            )
             try:
                 self.source, self.port = sockname
                 self.pack_knx_message()
@@ -25,25 +28,26 @@ class KnxRemoteDiagnosticRequest(KnxMessage):
                 self.port = None
 
     def _pack_knx_body(self):
-        #self.body = self._pack_hpai()
+        # self.body = self._pack_hpai()
         # selector
         import socket
-        hpai = bytearray(struct.pack('!B', 8))  # structure_length
-        hpai.extend(struct.pack('!B', 0x01))  # protocol code
+
+        hpai = bytearray(struct.pack("!B", 8))  # structure_length
+        hpai.extend(struct.pack("!B", 0x01))  # protocol code
         hpai.extend(socket.inet_aton(self.source))
-        hpai.extend(struct.pack('!H', self.port))
-        #hpai.extend(struct.pack('!B', 0x02)) # structure length
-        #hpai.extend(struct.pack('!B', 0x01)) # programming mode selector
-        hpai.extend(struct.pack('!B', 0x08)) # structure length
-        hpai.extend(struct.pack('!B', 0x02)) # programming mode selector
-        hpai.extend(struct.pack('!B', 0x00))
-        hpai.extend(struct.pack('!B', 0x00))
-        hpai.extend(struct.pack('!B', 0x54))
-        hpai.extend(struct.pack('!B', 0xff))
-        hpai.extend(struct.pack('!B', 0xa0))
-        hpai.extend(struct.pack('!B', 0x52))
+        hpai.extend(struct.pack("!H", self.port))
+        # hpai.extend(struct.pack('!B', 0x02)) # structure length
+        # hpai.extend(struct.pack('!B', 0x01)) # programming mode selector
+        hpai.extend(struct.pack("!B", 0x08))  # structure length
+        hpai.extend(struct.pack("!B", 0x02))  # programming mode selector
+        hpai.extend(struct.pack("!B", 0x00))
+        hpai.extend(struct.pack("!B", 0x00))
+        hpai.extend(struct.pack("!B", 0x54))
+        hpai.extend(struct.pack("!B", 0xFF))
+        hpai.extend(struct.pack("!B", 0xA0))
+        hpai.extend(struct.pack("!B", 0x52))
         return hpai
-        #return self.body
+        # return self.body
 
     def _unpack_knx_body(self, message):
         try:
@@ -55,12 +59,14 @@ class KnxRemoteDiagnosticRequest(KnxMessage):
 
 class KnxRemoteDiagnosticResponse(KnxMessage):
     def __init__(self, message=None):
-        super(KnxRemoteDiagnosticResponse, self).__init__()
+        super().__init__()
         if message:
             self.message = message
             self.unpack_knx_message(message)
         else:
-            self.header['service_type'] = KNX_MESSAGE_TYPES.get('REMOTE_DIAGNOSTIC_RESPONSE')
+            self.header["service_type"] = KNX_MESSAGE_TYPES.get(
+                "REMOTE_DIAGNOSTIC_RESPONSE"
+            )
             self.pack_knx_message()
 
     def _pack_knx_body(self):

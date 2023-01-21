@@ -1,14 +1,13 @@
-import struct
 import logging
+import struct
 
 LOGGER = logging.getLogger(__name__)
 
-from knxmap.data.constants import CEMI_APCI_TYPES, _CEMI_APCI_TYPES
+from knxmap.data.constants import _CEMI_APCI_TYPES, CEMI_APCI_TYPES
 
 
-class Apci(object):
-    def __init__(self, apci_type=None, apci_data=None,
-                 data=None):
+class Apci:
+    def __init__(self, apci_type=None, apci_data=None, data=None):
         if isinstance(apci_type, str):
             apci_type = CEMI_APCI_TYPES.get(apci_type)
         self.apci_type = apci_type
@@ -16,7 +15,7 @@ class Apci(object):
         self.data = data
 
     def __repr__(self):
-        return f'{self.__class__.__name__} apci_type: {_CEMI_APCI_TYPES.get(self.apci_type)}, apci_data: {self.apci_data}'
+        return f"{self.__class__.__name__} apci_type: {_CEMI_APCI_TYPES.get(self.apci_type)}, apci_data: {self.apci_data}"
 
     @staticmethod
     def _unpack_stream(fmt, stream):
@@ -44,15 +43,15 @@ class Apci(object):
                 apci |= ((self.apci_data >> i) & 1) << i
                 i += 1
                 data_space -= 1
-                #apci |= self.apci_data << 0
-        #apci = struct.pack('!H', apci)
+                # apci |= self.apci_data << 0
+        # apci = struct.pack('!H', apci)
         return apci
 
     def unpack(self, data=None):
         data = data or self.data
         if len(data) == 1:
             data.extend([0])
-        #assert len(data) >= 2, 'APCI data too short (only %d bytes)' % len(data)
+        # assert len(data) >= 2, 'APCI data too short (only %d bytes)' % len(data)
         self.apci_type = 0
         self.apci_type |= ((data[1] >> 6) & 1) << 0
         self.apci_type |= ((data[1] >> 7) & 1) << 1

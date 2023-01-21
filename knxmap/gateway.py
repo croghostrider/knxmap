@@ -3,12 +3,12 @@ import asyncio
 import logging
 
 from knxmap.data.constants import *
-from knxmap.messages import parse_message, KnxSearchRequest, KnxSearchResponse, KnxDescriptionRequest, \
-                            KnxDescriptionResponse, KnxRemoteDiagnosticRequest, \
-                            KnxRemoteDiagnosticResponse
+from knxmap.messages import (KnxDescriptionRequest, KnxDescriptionResponse,
+                             KnxRemoteDiagnosticRequest,
+                             KnxRemoteDiagnosticResponse, KnxSearchRequest,
+                             KnxSearchResponse, parse_message)
 
-__all__ = ['KnxGatewaySearch',
-           'KnxGatewayDescription']
+__all__ = ["KnxGatewaySearch", "KnxGatewayDescription"]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,8 +17,13 @@ class KnxGatewaySearch(asyncio.DatagramProtocol):
     """A protocol implementation for searching KNXnet/IP gateways via
     multicast messages. The protocol will hold a set responses with
     all the KNXnet/IP gateway responses."""
-    def __init__(self, loop=None, multicast_addr=KNX_CONSTANTS.get('MULTICAST_ADDR'),
-                 port=KNX_CONSTANTS.get('DEFAULT_PORT')):
+
+    def __init__(
+        self,
+        loop=None,
+        multicast_addr=KNX_CONSTANTS.get("MULTICAST_ADDR"),
+        port=KNX_CONSTANTS.get("DEFAULT_PORT"),
+    ):
         self.loop = loop or asyncio.get_event_loop()
         self.multicast_addr = multicast_addr
         self.port = port
@@ -30,12 +35,14 @@ class KnxGatewaySearch(asyncio.DatagramProtocol):
 
     def connection_made(self, transport):
         self.transport = transport
-        self.peername = self.transport.get_extra_info('peername')
-        self.sockname = self.transport.get_extra_info('sockname')
+        self.peername = self.transport.get_extra_info("peername")
+        self.sockname = self.transport.get_extra_info("sockname")
         packet = KnxSearchRequest(sockname=self.sockname)
         LOGGER.trace_outgoing(packet)
         packet = packet.get_message()
-        self.transport.get_extra_info('socket').sendto(packet, (self.multicast_addr, self.port))
+        self.transport.get_extra_info("socket").sendto(
+            packet, (self.multicast_addr, self.port)
+        )
 
     def datagram_received(self, data, addr):
         if knx_message := parse_message(data):
@@ -50,11 +57,14 @@ class KnxGatewaySearch(asyncio.DatagramProtocol):
         packet = KnxRemoteDiagnosticRequest(sockname=self.sockname)
         LOGGER.trace_outgoing(packet)
         packet = packet.get_message()
-        self.transport.get_extra_info('socket').sendto(packet, (self.multicast_addr, self.port))
+        self.transport.get_extra_info("socket").sendto(
+            packet, (self.multicast_addr, self.port)
+        )
 
 
 class KnxGatewayDescription(asyncio.DatagramProtocol):
     """Protocol implementation for KNXnet/IP description requests."""
+
     def __init__(self, future, loop=None, timeout=2, nat_mode=False):
         self.future = future
         self.loop = loop or asyncio.get_event_loop()
@@ -67,11 +77,11 @@ class KnxGatewayDescription(asyncio.DatagramProtocol):
 
     def connection_made(self, transport):
         self.transport = transport
-        self.peername = self.transport.get_extra_info('peername')
-        self.sockname = self.transport.get_extra_info('sockname')
+        self.peername = self.transport.get_extra_info("peername")
+        self.sockname = self.transport.get_extra_info("sockname")
         self.wait = self.loop.call_later(self.timeout, self.connection_timeout)
         if self.nat_mode:
-            packet = KnxDescriptionRequest(sockname=('0.0.0.0', 0))
+            packet = KnxDescriptionRequest(sockname=("0.0.0.0", 0))
         else:
             packet = KnxDescriptionRequest(sockname=self.sockname)
         LOGGER.trace_outgoing(packet)

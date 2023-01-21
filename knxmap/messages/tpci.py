@@ -1,14 +1,13 @@
-import struct
 import logging
+import struct
 
 LOGGER = logging.getLogger(__name__)
 
-from knxmap.data.constants import CEMI_TPCI_TYPES, _CEMI_TPCI_TYPES
+from knxmap.data.constants import _CEMI_TPCI_TYPES, CEMI_TPCI_TYPES
 
 
-class Tpci(object):
-    def __init__(self, tpci_type=None, tpci_sequence=0,
-                 data=None):
+class Tpci:
+    def __init__(self, tpci_type=None, tpci_sequence=0, data=None):
         if isinstance(tpci_type, str):
             tpci_type = CEMI_TPCI_TYPES.get(tpci_type)
         self.tpci_type = tpci_type
@@ -17,7 +16,7 @@ class Tpci(object):
         self.status = None
 
     def __repr__(self):
-        return f'{self.__class__.__name__} tpci_type: {_CEMI_TPCI_TYPES.get(self.tpci_type)}, sequence: {self.sequence}, status: {self.status}'
+        return f"{self.__class__.__name__} tpci_type: {_CEMI_TPCI_TYPES.get(self.tpci_type)}, sequence: {self.sequence}, status: {self.status}"
 
     @staticmethod
     def _unpack_stream(fmt, stream):

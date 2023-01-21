@@ -1,9 +1,10 @@
-import json
-import socket
 import collections
+import json
 import logging
+import socket
 
 LOGGER = logging.getLogger(__name__)
+
 
 def parse_knx_address(address):
     """Parse physical/individual KNX address.
@@ -19,8 +20,8 @@ def parse_knx_address(address):
     """
     assert isinstance(
         address, int
-    ), f'Address should be an integer, got {type(address)} instead'
-    return f'{address >> 12 & 15}.{address >> 8 & 15}.{address & 255}'
+    ), f"Address should be an integer, got {type(address)} instead"
+    return f"{address >> 12 & 15}.{address >> 8 & 15}.{address & 255}"
 
 
 def pack_knx_address(address):
@@ -31,8 +32,8 @@ def pack_knx_address(address):
     """
     assert isinstance(
         address, str
-    ), f'Address should be a string, got {type(address)} instead'
-    parts = address.split('.')
+    ), f"Address should be a string, got {type(address)} instead"
+    parts = address.split(".")
     return (int(parts[0]) << 12) + (int(parts[1]) << 8) + (int(parts[2]))
 
 
@@ -44,8 +45,8 @@ def parse_knx_group_address(address):
     """
     assert isinstance(
         address, int
-    ), f'Address should be an integer, got {type(address)} instead'
-    return f'{address >> 11 & 31}/{address >> 8 & 7}/{address & 255}'
+    ), f"Address should be an integer, got {type(address)} instead"
+    return f"{address >> 11 & 31}/{address >> 8 & 7}/{address & 255}"
 
 
 def pack_knx_group_address(address):
@@ -56,21 +57,21 @@ def pack_knx_group_address(address):
     """
     assert isinstance(
         address, str
-    ), f'Address should be a string, got {type(address)} instead'
-    parts = address.split('/')
+    ), f"Address should be a string, got {type(address)} instead"
+    parts = address.split("/")
     return (int(parts[0]) << 11) + (int(parts[1]) << 8) + (int(parts[2]))
 
 
 def parse_knx_device_serial(address):
     """Parse a KNX device serial to human readable format.
 
-    parse_knx_device_serial(b'\x00\x00\x00\x00\X12\x23')
+    parse_knx_device_serial(b'\x00\x00\x00\x00\\X12\x23')
     '000000005C58'
     """
     assert isinstance(
         address, bytes
-    ), f'Address should be bytes, got {type(address)} instead'
-    return '{0:02X}{1:02X}{2:02X}{3:02X}{4:02X}{5:02X}'.format(*address)
+    ), f"Address should be bytes, got {type(address)} instead"
+    return "{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}".format(*address)
 
 
 def parse_mac_address(address):
@@ -81,8 +82,8 @@ def parse_mac_address(address):
     """
     assert isinstance(
         address, bytes
-    ), f'Address should be bytes, got {type(address)} instead'
-    return '{0:02X}:{1:02X}:{2:02X}:{3:02X}:{4:02X}:{5:02X}'.format(*address)
+    ), f"Address should be bytes, got {type(address)} instead"
+    return "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}".format(*address)
 
 
 def parse_device_descriptor(desc):
@@ -93,8 +94,8 @@ def parse_device_descriptor(desc):
     """
     assert isinstance(
         desc, int
-    ), f'Device descriptor is not an integer, got {type(desc)} instead'
-    desc = format(desc, '04x')
+    ), f"Device descriptor is not an integer, got {type(desc)} instead"
+    desc = format(desc, "04x")
     medium = int(desc[0], 16)
     dev_type = int(desc[1:-1], 16)
     version = int(desc[-1], 16)
@@ -107,11 +108,11 @@ def unpack_ip_address(address):
 
 def get_manufacturer_by_id(mid):
     assert isinstance(mid, int)
-    with open('knxmap/data/manufacturers.json', 'r') as f:
+    with open("knxmap/data/manufacturers.json") as f:
         m = json.load(f)
-        for _m in m.get('manufacturers'):
-            if int(_m.get('knx_manufacturer_id')) == mid:
-                return _m.get('name')
+        for _m in m.get("manufacturers"):
+            if int(_m.get("knx_manufacturer_id")) == mid:
+                return _m.get("name")
 
 
 def make_runstate_printable(runstate):
@@ -119,35 +120,35 @@ def make_runstate_printable(runstate):
     if isinstance(runstate, bytes):
         runstate = unpack_cemi_runstate(runstate)
     for k, v in runstate.items():
-        if k == 'PROG_MODE':
-            _runstate['Programming Mode'] = 'ENABLED' if v else 'disabled'
-        elif k == 'LINK_LAYER':
-            _runstate['Link Layer'] = 'ENABLED' if v else 'disabled'
-        elif k == 'TRANSPORT_LAYER':
-            _runstate['Transport Layer'] = 'ENABLED' if v else 'disabled'
-        elif k == 'APP_LAYER':
-            _runstate['Application Layer'] = 'ENABLED' if v else 'disabled'
-        elif k == 'SERIAL_INTERFACE':
-            _runstate['Serial Interface'] = 'ENABLED' if v else 'disabled'
-        elif k == 'USER_APP':
-            _runstate['User Application'] = 'ENABLED' if v else 'disabled'
-        elif k == 'BC_DM':
-            _runstate['BC DM'] = v
+        if k == "PROG_MODE":
+            _runstate["Programming Mode"] = "ENABLED" if v else "disabled"
+        elif k == "LINK_LAYER":
+            _runstate["Link Layer"] = "ENABLED" if v else "disabled"
+        elif k == "TRANSPORT_LAYER":
+            _runstate["Transport Layer"] = "ENABLED" if v else "disabled"
+        elif k == "APP_LAYER":
+            _runstate["Application Layer"] = "ENABLED" if v else "disabled"
+        elif k == "SERIAL_INTERFACE":
+            _runstate["Serial Interface"] = "ENABLED" if v else "disabled"
+        elif k == "USER_APP":
+            _runstate["User Application"] = "ENABLED" if v else "disabled"
+        elif k == "BC_DM":
+            _runstate["BC DM"] = v
     return _runstate
 
 
 def unpack_cemi_runstate(data):
     """Parse runstate field to a dict."""
     if isinstance(data, bytes):
-        data = int.from_bytes(data, 'big')
+        data = int.from_bytes(data, "big")
     state = collections.OrderedDict()
-    state['PROG_MODE'] = (data >> 0) & 1
-    state['LINK_LAYER'] = (data >> 1) & 1
-    state['TRANSPORT_LAYER'] = (data >> 2) & 1
-    state['APP_LAYER'] = (data >> 3) & 1
-    state['SERIAL_INTERFACE'] = (data >> 4) & 1
-    state['USER_APP'] = (data >> 5) & 1
-    state['BC_DM'] = (data >> 6) & 1
+    state["PROG_MODE"] = (data >> 0) & 1
+    state["LINK_LAYER"] = (data >> 1) & 1
+    state["TRANSPORT_LAYER"] = (data >> 2) & 1
+    state["APP_LAYER"] = (data >> 3) & 1
+    state["SERIAL_INTERFACE"] = (data >> 4) & 1
+    state["USER_APP"] = (data >> 5) & 1
+    state["BC_DM"] = (data >> 6) & 1
     # We don't really care about the parity
     # state['parity'] = (data >> 7) & 1
     return state

@@ -1,13 +1,14 @@
 import collections
-import struct
-import logging
 import io
+import logging
+import struct
 
 from .tp import ExtendedDataRequest
 
 LOGGER = logging.getLogger(__name__)
 
-class CemiFrame(object):
+
+class CemiFrame:
     """Common External Message Interface (Common EMI, or cEMI) frame implementation.
     This is decoupled from the KnxMessage class because this allows
     to use cEMI frames over other mediums in the future (e.g. USB).
@@ -18,8 +19,13 @@ class CemiFrame(object):
      +--------+--------+-------- ... --------+---------------- ... ----------------+
        1 byte   1 byte      [0..n] bytes                     n bytes
     """
-    def __init__(self, message_code=0x11, additional_information_len=0,
-                 additional_information=None):
+
+    def __init__(
+        self,
+        message_code=0x11,
+        additional_information_len=0,
+        additional_information=None,
+    ):
         self.message_code = message_code
         self.additional_information_len = additional_information_len
         self.additional_information = additional_information or bytearray()
@@ -39,47 +45,60 @@ class CemiFrame(object):
             if not buf:
                 # In case we already reached EOF
                 # just return an empty byte string.
-                return b''
+                return b""
             if len(buf) != struct.calcsize(fmt):
                 # If read() returned some bytes, but
                 # not as much as required by fmt,
                 # unpack only the available bytes.
-                fmt = f'!{len(buf)}s'
+                fmt = f"!{len(buf)}s"
             return struct.unpack(fmt, buf)[0]
         except struct.error as e:
             LOGGER.exception(e)
 
     def pack(self, message_code=None):
         message_code = message_code or self.message_code
-        cemi = bytearray(struct.pack('!B', message_code))  # cEMI message code
+        cemi = bytearray(struct.pack("!B", message_code))  # cEMI message code
         # TODO: implement variable length if additional information is included
-        cemi.extend(struct.pack('!B', self.additional_information_len))  # add information length
+        cemi.extend(
+            struct.pack("!B", self.additional_information_len)
+        )  # add information length
         if self.additional_information_len:
             cemi.extend(self.additional_information)
         return cemi
 
     def unpack(self, message):
-        self.message_code = self._unpack_stream('!B', message)
-        self.additional_information_len = self._unpack_stream('!B', message)
+        self.message_code = self._unpack_stream("!B", message)
+        self.additional_information_len = self._unpack_stream("!B", message)
 
     def unpack_extended_data_request(self, message):
         """This function provides message parsing that
         is mostly compatible with the old API."""
         self.unpack(message)
-        if self.message_code == 0x2b and \
-                    self.additional_information_len > 0: # L_Busmon.ind
+        if (
+            self.message_code == 0x2B and self.additional_information_len > 0
+        ):  # L_Busmon.ind
             additional_information = io.BytesIO(
-                self._unpack_stream(
-                    f'!{self.additional_information_len}s', message
-                )
+                self._unpack_stream(f"!{self.additional_information_len}s", message)
             )
             self.additional_information = {}
-            self.additional_information['type1'] = self._unpack_stream('!B', additional_information)
-            self.additional_information['type1_length'] = self._unpack_stream('!B', additional_information)
-            self.additional_information['error_flags'] = self._unpack_stream('!B', additional_information)
-            self.additional_information['type2'] = self._unpack_stream('!B', additional_information)
-            self.additional_information['type2_length'] = self._unpack_stream('!B', additional_information)
-            self.additional_information['timestamp'] = self._unpack_stream('!4s', additional_information)
+            self.additional_information["type1"] = self._unpack_stream(
+                "!B", additional_information
+            )
+            self.additional_information["type1_length"] = self._unpack_stream(
+                "!B", additional_information
+            )
+            self.additional_information["error_flags"] = self._unpack_stream(
+                "!B", additional_information
+            )
+            self.additional_information["type2"] = self._unpack_stream(
+                "!B", additional_information
+            )
+            self.additional_information["type2_length"] = self._unpack_stream(
+                "!B", additional_information
+            )
+            self.additional_information["timestamp"] = self._unpack_stream(
+                "!4s", additional_information
+            )
             self.raw_frame.extend(message.read())
         else:
             data_request = ExtendedDataRequest(message=message)
@@ -93,9 +112,16 @@ class CemiFrame(object):
             self.data = data_request.data
 
     @staticmethod
-    def pack_cemi_runstate(prog_mode=False, link_layer_active=False, transport_layer_active=False,
-                           app_layer_active=False, serial_interface_active=False, user_app_run=False,
-                           bcu_download_mode=False, parity=0):
+    def pack_cemi_runstate(
+        prog_mode=False,
+        link_layer_active=False,
+        transport_layer_active=False,
+        app_layer_active=False,
+        serial_interface_active=False,
+        user_app_run=False,
+        bcu_download_mode=False,
+        parity=0,
+    ):
         """Pack runstate field of the cEMI message.
 
         Bit  |
@@ -141,13 +167,13 @@ class CemiFrame(object):
     def unpack_cemi_runstate(data):
         """Parse runstate field to a dict."""
         state = collections.OrderedDict()
-        state['PROG_MODE'] = (data >> 0) & 1
-        state['LINK_LAYER'] = (data >> 1) & 1
-        state['TRANSPORT_LAYER'] = (data >> 2) & 1
-        state['APP_LAYER'] = (data >> 3) & 1
-        state['SERIAL_INTERFACE'] = (data >> 4) & 1
-        state['USER_APP'] = (data >> 5) & 1
-        state['BC_DM'] = (data >> 6) & 1
+        state["PROG_MODE"] = (data >> 0) & 1
+        state["LINK_LAYER"] = (data >> 1) & 1
+        state["TRANSPORT_LAYER"] = (data >> 2) & 1
+        state["APP_LAYER"] = (data >> 3) & 1
+        state["SERIAL_INTERFACE"] = (data >> 4) & 1
+        state["USER_APP"] = (data >> 5) & 1
+        state["BC_DM"] = (data >> 6) & 1
         # We don't really care about the parity
         # state['parity'] = (data >> 7) & 1
         return state

@@ -9,18 +9,21 @@ from knxmap.data.constants import *
 from knxmap.messages import KnxMessage
 from knxmap.utils import make_runstate_printable
 
-__all__ = ['Targets',
-           'KnxTargets',
-           'BusResultSet',
-           'KnxTargetReport',
-           'KnxBusTargetReport',
-           'print_knx_target']
+__all__ = [
+    "Targets",
+    "KnxTargets",
+    "BusResultSet",
+    "KnxTargetReport",
+    "KnxBusTargetReport",
+    "print_knx_target",
+]
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Targets(object):
+class Targets:
     """A helper class that expands provided target definitions to a list of tuples."""
+
     def __init__(self, targets=None, ports=3671):
         self.targets = set()
         self.ports = set()
@@ -43,10 +46,10 @@ class Targets(object):
             try:
                 _targets = ipaddress.ip_network(target, strict=False)
             except ValueError:
-                LOGGER.error(f'Invalid target definition, ignoring it: {target}')
+                LOGGER.error(f"Invalid target definition, ignoring it: {target}")
                 continue
 
-            if '/' in target:
+            if "/" in target:
                 _targets = _targets.hosts()
 
             for _target in _targets:
@@ -54,33 +57,33 @@ class Targets(object):
                     self.targets.add((str(_target), port))
 
 
-class KnxTargets(object):
+class KnxTargets:
     """A helper class that expands knx bus targets to lists."""
+
     def __init__(self, targets):
         self.targets = set()
         if not targets:
             self.targets = None
-        elif '-' not in targets:
+        elif "-" not in targets:
             if not self.is_valid_physical_address(targets):
-                LOGGER.error('Invalid physical address')
+                LOGGER.error("Invalid physical address")
             else:
                 self.targets.add(targets)
         else:
             assert isinstance(targets, str)
-            if '-' in targets and targets.count('-') < 2:
+            if "-" in targets and targets.count("-") < 2:
                 # TODO: also parse dashes in octets
                 try:
-                    f, t = targets.split('-')
+                    f, t = targets.split("-")
                 except ValueError:
                     return
                 if not self.is_valid_physical_address(f):
-                    LOGGER.error('Invalid physical address From')
+                    LOGGER.error("Invalid physical address From")
                 if not self.is_valid_physical_address(t):
-                    LOGGER.error('Invalid physical address To')
+                    LOGGER.error("Invalid physical address To")
                     # TODO: make it group address aware
-                elif self.physical_address_to_int(t) <= \
-                        self.physical_address_to_int(f):
-                    LOGGER.error('From should be smaller then To')
+                elif self.physical_address_to_int(t) <= self.physical_address_to_int(f):
+                    LOGGER.error("From should be smaller then To")
                 else:
                     self.targets = self.expand_targets(f, t)
 
@@ -99,18 +102,18 @@ class KnxTargets(object):
 
     @staticmethod
     def physical_address_to_int(address):
-        parts = address.split('.')
+        parts = address.split(".")
         return (int(parts[0]) << 12) + (int(parts[1]) << 8) + (int(parts[2]))
 
     @staticmethod
     def int_to_physical_address(address):
-        return f'{address >> 12 & 15}.{address >> 8 & 15}.{address & 255}'
+        return f"{address >> 12 & 15}.{address >> 8 & 15}.{address & 255}"
 
     @staticmethod
     def is_valid_physical_address(address):
         assert isinstance(address, str)
         try:
-            parts = [int(i) for i in address.split('.')]
+            parts = [int(i) for i in address.split(".")]
         except ValueError:
             return False
         if len(parts) != 3:
@@ -125,10 +128,10 @@ class KnxTargets(object):
 
     @staticmethod
     def is_valid_group_address(address):
-        """ See <https://support.knx.org/hc/de/articles/115003188109-Gruppenadressen>. """
+        """See <https://support.knx.org/hc/de/articles/115003188109-Gruppenadressen>."""
         assert isinstance(address, str)
         try:
-            parts = [int(i) for i in address.split('/')]
+            parts = [int(i) for i in address.split("/")]
         except ValueError:
             return False
         if len(parts) < 2 or len(parts) > 3:
@@ -152,7 +155,7 @@ class KnxTargets(object):
         return True
 
 
-class BusResultSet(object):
+class BusResultSet:
     # TODO: implement
 
     def __init__(self):
@@ -160,14 +163,25 @@ class BusResultSet(object):
 
     def add(self, target):
         """Add a target to the result set, at the right position."""
-        pass
 
 
-class KnxTargetReport(object):
-    def __init__(self, host, port, mac_address, knx_address, device_serial,
-                 friendly_name, device_status, knx_medium, project_install_identifier,
-                 supported_services, bus_devices, additional_individual_addresses=None,
-                 manufacturer=None):
+class KnxTargetReport:
+    def __init__(
+        self,
+        host,
+        port,
+        mac_address,
+        knx_address,
+        device_serial,
+        friendly_name,
+        device_status,
+        knx_medium,
+        project_install_identifier,
+        supported_services,
+        bus_devices,
+        additional_individual_addresses=None,
+        manufacturer=None,
+    ):
         self.host = host
         self.port = port
         self.mac_address = mac_address
@@ -189,10 +203,18 @@ class KnxTargetReport(object):
         return self.host
 
 
-class KnxBusTargetReport(object):
-    def __init__(self, address, medium=None, type=None, version=None,
-                 device_serial=None, manufacturer=None, properties=None,
-                 device_state=None):
+class KnxBusTargetReport:
+    def __init__(
+        self,
+        address,
+        medium=None,
+        type=None,
+        version=None,
+        device_serial=None,
+        manufacturer=None,
+        properties=None,
+        device_state=None,
+    ):
         self.address = address
         self.medium = medium
         self.type = type
@@ -215,22 +237,23 @@ def print_knx_target(knx_target):
     out = {}
     out[knx_target.host] = collections.OrderedDict()
     o = out[knx_target.host]
-    o['Port'] = knx_target.port
-    o['MAC Address'] = knx_target.mac_address
-    o['KNX Bus Address'] = knx_target.knx_address
+    o["Port"] = knx_target.port
+    o["MAC Address"] = knx_target.mac_address
+    o["KNX Bus Address"] = knx_target.knx_address
     if knx_target.additional_individual_addresses:
-        o['Additional Bus Addresses'] = knx_target.additional_individual_addresses
-    o['KNX Device Serial'] = knx_target.device_serial
-    o['KNX Medium'] = KNX_MEDIUMS.get(knx_target.knx_medium)
+        o["Additional Bus Addresses"] = knx_target.additional_individual_addresses
+    o["KNX Device Serial"] = knx_target.device_serial
+    o["KNX Medium"] = KNX_MEDIUMS.get(knx_target.knx_medium)
     if knx_target.manufacturer:
-        o['Manufacturer'] = knx_target.manufacturer
-    o['Device Friendly Name'] = binascii.b2a_qp(
-        knx_target.friendly_name.strip().replace(b'\x00', b'')).decode()
-    o['Device Status'] = make_runstate_printable(knx_target.device_status)
-    o['Project Install Identifier'] = knx_target.project_install_identifier
-    o['Supported Services'] = knx_target.supported_services
+        o["Manufacturer"] = knx_target.manufacturer
+    o["Device Friendly Name"] = binascii.b2a_qp(
+        knx_target.friendly_name.strip().replace(b"\x00", b"")
+    ).decode()
+    o["Device Status"] = make_runstate_printable(knx_target.device_status)
+    o["Project Install Identifier"] = knx_target.project_install_identifier
+    o["Supported Services"] = knx_target.supported_services
     if knx_target.bus_devices:
-        o['Bus Devices'] = []
+        o["Bus Devices"] = []
         # Sort the device list based on KNX addresses
         x = {}
         for i in knx_target.bus_devices:
@@ -239,42 +262,49 @@ def print_knx_target(knx_target):
         for k, d in bus_devices.items():
             _d = {}
             _d[d.address] = collections.OrderedDict()
-            if hasattr(d, 'type') and \
-                    not isinstance(d.type, (type(None), type(False))):
-                _d[d.address]['Type'] = DEVICE_TYPES.get(d.type)
-            if hasattr(d, 'medium') and \
-                    not isinstance(d.medium, (type(None), type(False))):
-                _d[d.address]['Medium'] = KNX_BUS_MEDIUMS.get(d.medium)
-            if hasattr(d, 'device_serial') and \
-                    not isinstance(d.device_serial, (type(None), type(False))):
-                _d[d.address]['Device Serial'] = d.device_serial
-            if hasattr(d, 'device_state') and \
-                    not isinstance(d.device_state, (type(None), type(False))):
-                _d[d.address]['Device State'] = make_runstate_printable(d.device_state)
-            if hasattr(d, 'manufacturer') and \
-                    not isinstance(d.manufacturer, (type(None), type(False))):
-                _d[d.address]['Manufacturer'] = d.manufacturer
-            if hasattr(d, 'version') and \
-                    not isinstance(d.version, (type(None), type(False))):
-                _d[d.address]['Version'] = d.version
-            if hasattr(d, 'properties') and \
-                    isinstance(d.properties, dict) and d.properties:
-                _d[d.address]['Properties'] = d.properties
-            o['Bus Devices'].append(_d)
+            if hasattr(d, "type") and not isinstance(d.type, (type(None), type(False))):
+                _d[d.address]["Type"] = DEVICE_TYPES.get(d.type)
+            if hasattr(d, "medium") and not isinstance(
+                d.medium, (type(None), type(False))
+            ):
+                _d[d.address]["Medium"] = KNX_BUS_MEDIUMS.get(d.medium)
+            if hasattr(d, "device_serial") and not isinstance(
+                d.device_serial, (type(None), type(False))
+            ):
+                _d[d.address]["Device Serial"] = d.device_serial
+            if hasattr(d, "device_state") and not isinstance(
+                d.device_state, (type(None), type(False))
+            ):
+                _d[d.address]["Device State"] = make_runstate_printable(d.device_state)
+            if hasattr(d, "manufacturer") and not isinstance(
+                d.manufacturer, (type(None), type(False))
+            ):
+                _d[d.address]["Manufacturer"] = d.manufacturer
+            if hasattr(d, "version") and not isinstance(
+                d.version, (type(None), type(False))
+            ):
+                _d[d.address]["Version"] = d.version
+            if (
+                hasattr(d, "properties")
+                and isinstance(d.properties, dict)
+                and d.properties
+            ):
+                _d[d.address]["Properties"] = d.properties
+            o["Bus Devices"].append(_d)
 
     def print_fmt(d, indent=0):
         for key, value in d.items():
             if indent == 0:
-                print('   ' * indent + str(key))
+                print("   " * indent + str(key))
             elif isinstance(value, (dict, collections.OrderedDict)):
                 if not len(value.keys()):
-                    print('   ' * indent + str(key))
+                    print("   " * indent + str(key))
                 else:
-                    print('   ' * indent + str(key) + ': ')
+                    print("   " * indent + str(key) + ": ")
             else:
-                print('   ' * indent + str(key) + ': ', end='', flush=True)
+                print("   " * indent + str(key) + ": ", end="", flush=True)
 
-            if key == 'Bus Devices':
+            if key == "Bus Devices":
                 print()
                 for i in value:
                     print_fmt(i, indent + 1)
@@ -282,7 +312,7 @@ def print_knx_target(knx_target):
                 for i, v in enumerate(value):
                     if i == 0:
                         print()
-                    print('   ' * (indent + 1) + str(v))
+                    print("   " * (indent + 1) + str(v))
             elif isinstance(value, (dict, collections.OrderedDict)):
                 print_fmt(value, indent + 1)
             else:
