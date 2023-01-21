@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "run python file",
+      "type": "shell",
+      "linux": {
+        "command": "python ${file}"
+      },
+      "windows": {
+        "command": "python ${file}"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "focus": false,
+        "clear": true
+      }
+    }
+  ]
+}
