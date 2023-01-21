@@ -43,8 +43,10 @@ class DataRequest(object):
         if message:
             self.unpack(message)
         else:
-            assert isinstance(knx_source, int), 'KNX source invalid %s' % knx_source
-            assert isinstance(knx_destination, int), 'KNX destination invalid %s' % knx_destination
+            assert isinstance(knx_source, int), f'KNX source invalid {knx_source}'
+            assert isinstance(
+                knx_destination, int
+            ), f'KNX destination invalid {knx_destination}'
 
     def __repr__(self):
         return '%s knx_source: %s, knx_destination: %s, tpci_type: %s, apci_type: %s, ' \
@@ -80,8 +82,7 @@ class DataRequest(object):
     @staticmethod
     def unpack_control_field(data):
         """Parse controlfield1 to a dict."""
-        cf = {}
-        cf['priority'] = 0
+        cf = {'priority': 0}
         cf['priority'] |= ((data >> 2) & 1) << 0
         cf['priority'] |= ((data >> 3) & 1) << 1
         cf['repeat_flag'] = (data >> 5) & 1
@@ -99,8 +100,7 @@ class DataRequest(object):
     @staticmethod
     def unpack_npci(data):
         """Parse NPCI to a dict."""
-        npci = {}
-        npci['data_length'] = 0
+        npci = {'data_length': 0}
         npci['data_length'] |= ((data >> 0) & 1) << 0
         npci['data_length'] |= ((data >> 1) & 1) << 1
         npci['data_length'] |= ((data >> 2) & 1) << 2
@@ -125,9 +125,7 @@ class DataRequest(object):
         data_request.extend(struct.pack('!H', self.knx_source))
         data_request.extend(struct.pack('!H', self.knx_destination))
         tpci = None
-        data_len = 0
-        if self.data:
-            data_len = len(self.data)
+        data_len = len(self.data) if self.data else 0
         if self.apci_type:
             data_len += 1
         data_request.extend(struct.pack('!B', self.pack_npci(data_len=data_len,
@@ -165,8 +163,9 @@ class DataRequest(object):
         _npci = self._unpack_stream('!B', message)
         self.npci = self.unpack_npci(_npci)
         if self.npci.get('data_length') > 0:
-            tpci_apci = bytearray(self._unpack_stream('{}s'.format(self.npci.get('data_length')),
-                                                      message))
+            tpci_apci = bytearray(
+                self._unpack_stream(f"{self.npci.get('data_length')}s", message)
+            )
             self.tpci = Tpci()
             self.tpci.unpack(tpci_apci[0])
             self.tpci_type = self.tpci.tpci_type
@@ -213,23 +212,17 @@ class ExtendedDataRequest(object):
             assert isinstance(knx_source, int)
             assert isinstance(knx_destination, int)
             if tpci_type:
-                assert tpci_type in CEMI_TPCI_TYPES.keys(),\
-                    'Invalid TPCI type %s' % tpci_type
+                assert tpci_type in CEMI_TPCI_TYPES.keys(), f'Invalid TPCI type {tpci_type}'
             if tpci_control_type:
-                assert tpci_control_type in TPCI_UNNUMBERED_CONTROL_DATA_TYPES.keys() or \
-                       tpci_control_type in TPCI_NUMBERED_CONTROL_DATA_TYPES.keys(), \
-                            'Invalid UCD type %s' % tpci_control_type
+                assert (
+                    tpci_control_type in TPCI_UNNUMBERED_CONTROL_DATA_TYPES.keys()
+                    or tpci_control_type in TPCI_NUMBERED_CONTROL_DATA_TYPES.keys()
+                ), f'Invalid UCD type {tpci_control_type}'
             if apci_type:
-                assert apci_type in CEMI_APCI_TYPES.keys(),\
-                    'Invalid APCI type %s' % apci_type
+                assert apci_type in CEMI_APCI_TYPES.keys(), f'Invalid APCI type {apci_type}'
 
     def __repr__(self):
-        return '%s knx_source: %s, knx_destination: %s, tpci_type: %s, apci_type: %s' % (
-            self.__class__.__name__,
-            knxmap.utils.parse_knx_address(self.knx_source),
-            knxmap.utils.parse_knx_address(self.knx_destination),
-            CEMI_TPCI_TYPES.get(self.tpci_type),
-            CEMI_APCI_TYPES.get(self.apci_type))
+        return f'{self.__class__.__name__} knx_source: {knxmap.utils.parse_knx_address(self.knx_source)}, knx_destination: {knxmap.utils.parse_knx_address(self.knx_destination)}, tpci_type: {CEMI_TPCI_TYPES.get(self.tpci_type)}, apci_type: {CEMI_APCI_TYPES.get(self.apci_type)}'
 
     @staticmethod
     def _unpack_stream(fmt, stream):
@@ -283,10 +276,11 @@ class ExtendedDataRequest(object):
     @staticmethod
     def unpack_control_field(data):
         """Parse controlfield1 to a dict."""
-        cf = {}
-        cf['confirm'] = (data >> 0) & 1
-        cf['acknowledge_req'] = (data >> 1) & 1
-        cf['priority'] = 0
+        cf = {
+            'confirm': data >> 0 & 1,
+            'acknowledge_req': data >> 1 & 1,
+            'priority': 0,
+        }
         cf['priority'] |= ((data >> 2) & 1) << 0
         cf['priority'] |= ((data >> 3) & 1) << 1
         cf['system_broadcast'] = (data >> 4) & 1
@@ -317,8 +311,7 @@ class ExtendedDataRequest(object):
     @staticmethod
     def unpack_extended_control_field(data):
         """Parse controlfield2 to a dict."""
-        cf = {}
-        cf['ext_frame_format'] = 0
+        cf = {'ext_frame_format': 0}
         cf['ext_frame_format'] |= ((data >> 0) & 1) << 0
         cf['ext_frame_format'] |= ((data >> 1) & 1) << 1
         cf['ext_frame_format'] |= ((data >> 2) & 1) << 2
@@ -343,9 +336,7 @@ class ExtendedDataRequest(object):
             address_type=self.destination_type)))
         data_request.extend(struct.pack('!H', self.knx_source))
         data_request.extend(struct.pack('!H', self.knx_destination))
-        data_len = 0
-        if self.data:
-            data_len = len(self.data)
+        data_len = len(self.data) if self.data else 0
         if self.apci_type:
             data_len += 1
         data_request.extend(struct.pack('!B', data_len))
@@ -384,8 +375,7 @@ class ExtendedDataRequest(object):
         self.knx_source = self._unpack_stream('!H', message)
         self.knx_destination = self._unpack_stream('!H', message)
         self.npdu_len = self._unpack_stream('!B', message)
-        tpci_apci = bytearray(self._unpack_stream('{}s'.format(self.npdu_len + 1),
-                                                  message))
+        tpci_apci = bytearray(self._unpack_stream(f'{self.npdu_len + 1}s', message))
         self.tpci = Tpci()
         self.tpci.unpack(tpci_apci[0])
         self.tpci_type = self.tpci.tpci_type

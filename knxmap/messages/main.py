@@ -27,14 +27,11 @@ class KnxMessage(object):
         self.message_code = None
 
     def __repr__(self):
-        _repr = '%s source: %s, port: %s' % (
-            self.__class__.__name__,
-            self.source,
-            self.port)
+        _repr = f'{self.__class__.__name__} source: {self.source}, port: {self.port}'
         if self.knx_source:
-            _repr += ', knx_source: %s' % KnxMessage.parse_knx_address(self.knx_source)
+            _repr += f', knx_source: {KnxMessage.parse_knx_address(self.knx_source)}'
         if self.knx_destination:
-            _repr += ', knx_destination: %s' % KnxMessage.parse_knx_address(self.knx_destination)
+            _repr += f', knx_destination: {KnxMessage.parse_knx_address(self.knx_destination)}'
         return _repr
 
     @staticmethod
@@ -51,7 +48,7 @@ class KnxMessage(object):
         '8.6.159'
         """
         assert isinstance(address, int), 'Address should be an integer'
-        return '{}.{}.{}'.format((address >> 12) & 0xf, (address >> 8) & 0xf, address & 0xff)
+        return f'{address >> 12 & 15}.{address >> 8 & 15}.{address & 255}'
 
     @staticmethod
     def pack_knx_address(address):
@@ -72,7 +69,7 @@ class KnxMessage(object):
         '6/0/57'
         """
         assert isinstance(address, int), 'Address should be an integer'
-        return '{}/{}/{}'.format((address >> 11) & 0x1f, (address >> 8) & 0x7, address & 0xff)
+        return f'{address >> 11 & 31}/{address >> 8 & 7}/{address & 255}'
 
     @staticmethod
     def pack_knx_group_address(address):
@@ -141,18 +138,15 @@ class KnxMessage(object):
         elif '/' in address:
             self.knx_destination = self.pack_knx_group_address(address)
         else:
-            LOGGER.error('Invalid address %s' % address)
+            LOGGER.error(f'Invalid address {address}')
 
     def get_message(self):
         """Return the current message."""
         # TODO: Maybe use this as string representation?
-        return self.message if self.message else None
+        return self.message or None
 
     def pack_knx_message(self):
-        if not self.body:
-            message_body = self._pack_knx_body()
-        else:
-            message_body = self.body
+        message_body = self.body or self._pack_knx_body()
         self.header['total_length'] = 6 + len(message_body)  # header size is always 6
         self.message = self._pack_knx_header()
         self.message.extend(message_body)
@@ -218,16 +212,14 @@ class KnxMessage(object):
         return hpai
 
     def _unpack_hpai(self, message):
-        hpai = {}
-        hpai['structure_length'] = self._unpack_stream('!B', message)
+        hpai = {'structure_length': self._unpack_stream('!B', message)}
         hpai['protocol_code'] = self._unpack_stream('!B', message)
         hpai['ip_address'] = socket.inet_ntoa(message.read(4))
         hpai['port'] = self._unpack_stream('!H', message)
         return hpai
 
     def _unpack_dib_dev_info(self, message):
-        dib_dev_info = {}
-        dib_dev_info['structure_length'] = self._unpack_stream('!B', message)
+        dib_dev_info = {'structure_length': self._unpack_stream('!B', message)}
         dib_dev_info['description_type'] = self._unpack_stream('!B', message)
         dib_dev_info['knx_medium'] = self._unpack_stream('!B', message)
         dib_dev_info['device_status'] = CemiFrame.unpack_cemi_runstate(self._unpack_stream('!B', message))
@@ -245,7 +237,7 @@ class KnxMessage(object):
         dib_supp_sv_families['structure_length'] = self._unpack_stream('!B', message)
         dib_supp_sv_families['description_type'] = self._unpack_stream('!B', message)
         dib_supp_sv_families['families'] = {}
-        for i in range(int((dib_supp_sv_families['structure_length'] - 2) / 2)):
+        for _ in range(int((dib_supp_sv_families['structure_length'] - 2) / 2)):
             service_id = self._unpack_stream('!B', message)
             version = self._unpack_stream('!B', message)
             dib_supp_sv_families['families'][service_id] = {}

@@ -71,5 +71,5 @@ def parse_message(data):
         LOGGER.debug('Parsing KnxDeviceConfigurationAck')
         return KnxDeviceConfigurationAck(data)
     else:
-        LOGGER.error('Unknown message type: {}'.format(message_type))
+        LOGGER.error(f'Unknown message type: {message_type}')
         return None

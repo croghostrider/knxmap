@@ -43,7 +43,7 @@ class Targets(object):
             try:
                 _targets = ipaddress.ip_network(target, strict=False)
             except ValueError:
-                LOGGER.error('Invalid target definition, ignoring it: {}'.format(target))
+                LOGGER.error(f'Invalid target definition, ignoring it: {target}')
                 continue
 
             if '/' in target:
@@ -93,12 +93,9 @@ class KnxTargets(object):
 
     @staticmethod
     def expand_targets(f, t):
-        ret = set()
         f = KnxMessage.pack_knx_address(f)
         t = KnxMessage.pack_knx_address(t)
-        for i in range(f, t + 1):
-            ret.add(KnxMessage.parse_knx_address(i))
-        return ret
+        return {KnxMessage.parse_knx_address(i) for i in range(f, t + 1)}
 
     @staticmethod
     def physical_address_to_int(address):
@@ -107,7 +104,7 @@ class KnxTargets(object):
 
     @staticmethod
     def int_to_physical_address(address):
-        return '{}.{}.{}'.format((address >> 12) & 0xf, (address >> 8) & 0xf, address & 0xff)
+        return f'{address >> 12 & 15}.{address >> 8 & 15}.{address & 255}'
 
     @staticmethod
     def is_valid_physical_address(address):
@@ -124,9 +121,7 @@ class KnxTargets(object):
             return False
         if parts[2] < 0 or parts[2] > 255:
             return False
-        if parts[0] == 0 and parts[1] == 0 and parts[2] == 0:
-            return False
-        return True
+        return parts[0] != 0 or parts[1] != 0 or parts[2] != 0
 
     @staticmethod
     def is_valid_group_address(address):

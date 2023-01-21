@@ -14,7 +14,7 @@ def simple_hexdump(data):
     hex = ''
     for i in [data[i:i + 16] for i in range(0, len(data), 16)]:
         for j in [i[j:j + 2] for j in range(0, len(i), 2)]:
-            hex += '0x%s ' % j.decode().upper()
+            hex += f'0x{j.decode().upper()} '
         hex += '\n'
     return hex
 
@@ -43,25 +43,26 @@ def trace_outgoing(self, message, direction='OUT'):
 def trace_packet(self, message, *args, **kwargs):
     """A simple packet tracing function that will print
     information about packets."""
-    if LOGGER.isEnabledFor(TRACE_LOG_LEVEL):
-        output = '[PACKET TRACE]'
-        direction = kwargs.get('direction', None)
-        if direction and direction in ['IN', 1]:
-            direction = '<<<<<<<<<< [INCOMING] <<<<<<<<<<'
-        elif direction and direction in ['OUT', 0]:
-            direction = '>>>>>>>>>> [OUTGOING] >>>>>>>>>>'
-        else:
-            direction = ''
-        if isinstance(message, KnxMessage):
-            output += ' ' + str(message)
-            message = message.message
-        elif isinstance(message, KnxHidReport):
-            output += ' ' + str(message)
-            message = message.report
-        output += '\n' + direction + '\n'
-        output += hexdump(message)
-        output += direction
-        LOGGER._log(TRACE_LOG_LEVEL, output, args)
+    if not LOGGER.isEnabledFor(TRACE_LOG_LEVEL):
+        return
+    direction = kwargs.get('direction')
+    if direction and direction in ['IN', 1]:
+        direction = '<<<<<<<<<< [INCOMING] <<<<<<<<<<'
+    elif direction and direction in ['OUT', 0]:
+        direction = '>>>>>>>>>> [OUTGOING] >>>>>>>>>>'
+    else:
+        direction = ''
+    output = '[PACKET TRACE]'
+    if isinstance(message, KnxMessage):
+        output += f' {str(message)}'
+        message = message.message
+    elif isinstance(message, KnxHidReport):
+        output += f' {str(message)}'
+        message = message.report
+    output += '\n' + direction + '\n'
+    output += hexdump(message)
+    output += direction
+    LOGGER._log(TRACE_LOG_LEVEL, output, args)
 
 
 def setup_logger(level):

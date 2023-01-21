@@ -44,8 +44,7 @@ class KnxUsbTransport(object):
         self._dev.open(self.vendor_id, self.product_id)
         self._dev.set_nonblocking(1)
         self.serial = self._dev.get_serial_number_string()
-        active_emi = self._get_active_emi_type()
-        if active_emi:
+        if active_emi := self._get_active_emi_type():
             self.emi_version = active_emi
         else:
             self._get_supported_emi_type()
@@ -175,29 +174,18 @@ class KnxHidReport(object):
             elif isinstance(data, bytearray):
                 data = io.BytesIO(data)
             else:
-                LOGGER.error('Invalid data type %s' % type(data))
+                LOGGER.error(f'Invalid data type {type(data)}')
             self._unpack_report_and_protocol_header(data)
-            if (self.report_header.get('data_length') - 8) > 0:
+            if self.report_header.get('data_length') > 8:
                 # parse data
                 self._unpack_report_body(data)
 
     def __repr__(self):
-        if self.protocol_header.get('protocol_id') == 0x0f:
-            return '%s protocol_type: %s, device_feature: %s, service_identifier: %s, ' \
-                   'message_code: %s' % (
-                       self.__class__.__name__,
-                       PROTOCOL_TYPES.get(self.protocol_header.get('protocol_id')),
-                       DEVICE_FEATURES.get(self.body.get('message_code')),
-                       DEVICE_SERVICE_IDENTIFIERS.get(self.protocol_header.get('emi_id')),
-                       hex(self.body.get('message_code')))
-        else:
-            return '%s protocol_type: %s, message_type: %s, service_identifier: %s, ' \
-                   'message_code: %s' % (
-                       self.__class__.__name__,
-                       PROTOCOL_TYPES.get(self.protocol_header.get('protocol_id')),
-                       EMI1_PRIMITIVES.get(self.body.get('message_code')),
-                       DEVICE_SERVICE_IDENTIFIERS.get(self.protocol_header.get('emi_id')),
-                       hex(self.body.get('message_code')))
+        return (
+            f"{self.__class__.__name__} protocol_type: {PROTOCOL_TYPES.get(self.protocol_header.get('protocol_id'))}, device_feature: {DEVICE_FEATURES.get(self.body.get('message_code'))}, service_identifier: {DEVICE_SERVICE_IDENTIFIERS.get(self.protocol_header.get('emi_id'))}, message_code: {hex(self.body.get('message_code'))}"
+            if self.protocol_header.get('protocol_id') == 0x0F
+            else f"{self.__class__.__name__} protocol_type: {PROTOCOL_TYPES.get(self.protocol_header.get('protocol_id'))}, message_type: {EMI1_PRIMITIVES.get(self.body.get('message_code'))}, service_identifier: {DEVICE_SERVICE_IDENTIFIERS.get(self.protocol_header.get('emi_id'))}, message_code: {hex(self.body.get('message_code'))}"
+        )
 
     @staticmethod
     def _unpack_stream(fmt, stream):
@@ -250,8 +238,9 @@ class KnxHidReport(object):
     def _unpack_report_body(self, data):
         self.body['message_code'] = self._unpack_stream('!B', data)
         if self.protocol_header.get('protocol_id') == 0x0f:
-            self.body['data'] = self._unpack_stream('{}s'.format(
-                self.protocol_header.get('body_length') - 1), data)
+            self.body['data'] = self._unpack_stream(
+                f"{self.protocol_header.get('body_length') - 1}s", data
+            )
             return
         self.body['frame'] = DataRequest(message=data)
 

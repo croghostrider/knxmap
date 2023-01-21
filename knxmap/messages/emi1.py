@@ -37,7 +37,7 @@ class KnxEmi1Frame(object):
             LOGGER.exception(e)
 
     def pack(self, message_code=None,):
-        message_code = message_code if message_code else self.message_code
+        message_code = message_code or self.message_code
         # TODO: do not include message code here?
         #emi = bytearray(struct.pack('!B', message_code))  # message code
         #emi = bytearray(struct.pack('!B', self.message_code))

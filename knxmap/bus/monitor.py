@@ -35,7 +35,7 @@ class KnxBusMonitor(KnxTunnelConnection):
     def datagram_received(self, data, addr):
         knx_message = parse_message(data)
         if not knx_message:
-            LOGGER.error('Invalid KNX message: {}'.format(data))
+            LOGGER.error(f'Invalid KNX message: {data}')
             self.knx_tunnel_disconnect()
             self.transport.close()
             self.future.set_result(None)
@@ -51,14 +51,16 @@ class KnxBusMonitor(KnxTunnelConnection):
                 if not self.group_monitor and knx_message.ERROR_CODE == 0x23:
                     LOGGER.error('Device does not support BUSMONITOR, try --group-monitor instead')
                 else:
-                    LOGGER.error('Connection setup error: {}'.format(knx_message.ERROR))
+                    LOGGER.error(f'Connection setup error: {knx_message.ERROR}')
                 self.transport.close()
                 self.future.set_result(None)
         elif isinstance(knx_message, KnxTunnellingRequest):
             self.print_message(knx_message)
-            if CEMI_PRIMITIVES[knx_message.cemi.message_code] == 'L_Data.con' or \
-                    CEMI_PRIMITIVES[knx_message.cemi.message_code] == 'L_Data.ind' or \
-                    CEMI_PRIMITIVES[knx_message.cemi.message_code] == 'L_Busmon.ind':
+            if CEMI_PRIMITIVES[knx_message.cemi.message_code] in [
+                'L_Data.con',
+                'L_Data.ind',
+                'L_Busmon.ind',
+            ]:
                 tunnelling_ack = KnxTunnellingAck(
                     communication_channel=knx_message.communication_channel,
                     sequence_count=knx_message.sequence_counter)

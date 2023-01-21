@@ -232,7 +232,7 @@ def main():
                 bus_target=bus_target.targets,
                 full_key_space=args.full_key_space))
         elif args.cmd == 'scan':
-            LOGGER.info('Scanning {} target(s)'.format(len(targets.targets)))
+            LOGGER.info(f'Scanning {len(targets.targets)} target(s)')
             bus_targets = KnxTargets(args.bus_targets)
             loop.run_until_complete(knxmap.scan(
                 desc_timeout=args.timeout,

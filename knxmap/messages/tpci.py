@@ -17,11 +17,7 @@ class Tpci(object):
         self.status = None
 
     def __repr__(self):
-        return '%s tpci_type: %s, sequence: %s, status: %s' % (
-            self.__class__.__name__,
-            _CEMI_TPCI_TYPES.get(self.tpci_type),
-            self.sequence,
-            self.status)
+        return f'{self.__class__.__name__} tpci_type: {_CEMI_TPCI_TYPES.get(self.tpci_type)}, sequence: {self.sequence}, status: {self.status}'
 
     @staticmethod
     def _unpack_stream(fmt, stream):

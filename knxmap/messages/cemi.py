@@ -44,13 +44,13 @@ class CemiFrame(object):
                 # If read() returned some bytes, but
                 # not as much as required by fmt,
                 # unpack only the available bytes.
-                fmt = '!{}s'.format(len(buf))
+                fmt = f'!{len(buf)}s'
             return struct.unpack(fmt, buf)[0]
         except struct.error as e:
             LOGGER.exception(e)
 
     def pack(self, message_code=None):
-        message_code = message_code if message_code else self.message_code
+        message_code = message_code or self.message_code
         cemi = bytearray(struct.pack('!B', message_code))  # cEMI message code
         # TODO: implement variable length if additional information is included
         cemi.extend(struct.pack('!B', self.additional_information_len))  # add information length
@@ -67,9 +67,12 @@ class CemiFrame(object):
         is mostly compatible with the old API."""
         self.unpack(message)
         if self.message_code == 0x2b and \
-                self.additional_information_len > 0: # L_Busmon.ind
-            additional_information = io.BytesIO(self._unpack_stream('!{}s'.format(
-                self.additional_information_len), message))
+                    self.additional_information_len > 0: # L_Busmon.ind
+            additional_information = io.BytesIO(
+                self._unpack_stream(
+                    f'!{self.additional_information_len}s', message
+                )
+            )
             self.additional_information = {}
             self.additional_information['type1'] = self._unpack_stream('!B', additional_information)
             self.additional_information['type1_length'] = self._unpack_stream('!B', additional_information)

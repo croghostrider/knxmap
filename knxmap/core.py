@@ -105,14 +105,14 @@ class KnxMap(object):
         connected = yield from future
         alive = yield from protocol.tpci_connect(target)
         if full_key_space:
-            key_space = range(0, 0xffffffff)
+            key_space = range(0xffffffff)
         else:
             key_space = [0x11223344, 0x12345678, 0x00000000, 0x87654321, 0x11111111, 0xffffffff]
         # Bruteforce the key via A_Authorize_Request messages
         for key in key_space:
             access_level = yield from protocol.apci_authenticate(target, key)
             if access_level == 0:
-                LOGGER.info("GOT THE KEY: {}".format(format(key, '08x')))
+                LOGGER.info(f"GOT THE KEY: {format(key, '08x')}")
                 break
 
     @asyncio.coroutine
@@ -121,10 +121,10 @@ class KnxMap(object):
         try:
             while True:
                 target = self.q.get_nowait()
-                LOGGER.debug('Scanning {}'.format(target))
+                LOGGER.debug(f'Scanning {target}')
                 response = None
                 for _try in range(self.desc_retries):
-                    LOGGER.debug('Sending {}. KnxDescriptionRequest to {}'.format(_try, target))
+                    LOGGER.debug(f'Sending {_try}. KnxDescriptionRequest to {target}')
                     future = asyncio.Future()
                     yield from self.loop.create_datagram_endpoint(
                         functools.partial(KnxGatewayDescription, future,
@@ -184,10 +184,15 @@ class KnxMap(object):
                                 if conf_response and conf_response.data:
                                     data = conf_response.data
                                     target_report.additional_individual_addresses = []
-                                    for addr in [data[i:i+2] for i in range(0, len(data), 2)]:
-                                        target_report.additional_individual_addresses.append(
-                                            knxmap.utils.parse_knx_address(int.from_bytes(addr, 'big')))
-
+                                    target_report.additional_individual_addresses.extend(
+                                        knxmap.utils.parse_knx_address(
+                                            int.from_bytes(addr, 'big')
+                                        )
+                                        for addr in [
+                                            data[i : i + 2]
+                                            for i in range(0, len(data), 2)
+                                        ]
+                                    )
                             # Read manufacurer ID
                             count = yield from bus_protocol.configuration_request(
                                         target,
@@ -277,11 +282,10 @@ class KnxMap(object):
             yield from asyncio.sleep(self.search_timeout)
 
             if protocol.responses:
-                if True:
-                    # TODO: check if we want diagnostic requests as well
-                    print('sending diagnostic request')
-                    protocol.send_diagnostic_request()
-                    yield from asyncio.sleep(self.search_timeout)
+                # TODO: check if we want diagnostic requests as well
+                print('sending diagnostic request')
+                protocol.send_diagnostic_request()
+                yield from asyncio.sleep(self.search_timeout)
 
                 # If protocol received SEARCH_RESPONSE packets, print them
                 for response in protocol.responses:
@@ -311,7 +315,7 @@ class KnxMap(object):
         self.t0 = time.time()
         yield from asyncio.ensure_future(asyncio.Task(self._knx_search_worker(), loop=self.loop))
         self.t1 = time.time()
-        LOGGER.info('Scan took {} seconds'.format(self.t1 - self.t0))
+        LOGGER.info(f'Scan took {self.t1 - self.t0} seconds')
 
     @asyncio.coroutine
     def search(self, search_timeout=5, iface=None, multicast_addr='224.0.23.12',
@@ -338,15 +342,16 @@ class KnxMap(object):
     @asyncio.coroutine
     def _knx_bus_worker(self, transport, protocol, knx_gateway=None, queue=None):
         """A worker for communicating with devices on the bus."""
-        if not queue and not knx_gateway:
-            LOGGER.error('No target queue available')
-            return
-        elif not queue and knx_gateway:
-            queue = self.bus_queues.get(knx_gateway.host)
+        if not queue:
+            if not knx_gateway:
+                LOGGER.error('No target queue available')
+                return
+            else:
+                queue = self.bus_queues.get(knx_gateway.host)
         try:
             while True:
                 target = queue.get_nowait()
-                LOGGER.info('BUS: target: {}'.format(target))
+                LOGGER.info(f'BUS: target: {target}')
                 if not protocol.tunnel_established:
                     LOGGER.error('KNX tunnel is not open!')
                     return
@@ -356,9 +361,9 @@ class KnxMap(object):
                 # TODO: While debugging it's fine to see if the tunnel is alive
                 # or not.
                 if not alive:
-                    LOGGER.debug('KNX tunnel to target {} is NOT alive!'.format(target))
+                    LOGGER.debug(f'KNX tunnel to target {target} is NOT alive!')
                 else:
-                    LOGGER.debug('KNX tunnel to target {} is alive!'.format(target))
+                    LOGGER.debug(f'KNX tunnel to target {target} is alive!')
                     properties = collections.OrderedDict()
                     serial = None
 
@@ -476,7 +481,7 @@ class KnxMap(object):
 
                         start_addr = 0x0100
                         properties['EEPROM_DUMP'] = b''
-                        for i in range(51):
+                        for _ in range(51):
                             ret = yield from protocol.apci_memory_read(
                                 target,
                                 memory_address=start_addr,
@@ -486,11 +491,7 @@ class KnxMap(object):
                             start_addr += 5
 
                     # Try to read group addresses
-                    if desc_type ==7:
-                        group_address_table = 0x4000
-                    else:
-                        group_address_table = 0x0116
-
+                    group_address_table = 0x4000 if desc_type ==7 else 0x0116
                     if desc_type > 1 and not self.ignore_auth:
                         auth_level = yield from protocol.apci_authenticate(
                             target,
@@ -498,7 +499,7 @@ class KnxMap(object):
                         if auth_level > 0:
                             yield from protocol.tpci_disconnect(target)
                             queue.task_done()
-                            LOGGER.error('Invalid authentication key for target %s' % target)
+                            LOGGER.error(f'Invalid authentication key for target {target}')
                             continue
 
                     ret = yield from protocol.apci_memory_read(
@@ -594,7 +595,7 @@ class KnxMap(object):
         for i in self.bus_devices:
             knx_gateway.bus_devices.append(i)
 
-        LOGGER.info('Bus scan took {} seconds'.format(self.t1 - self.t0))
+        LOGGER.info(f'Bus scan took {self.t1 - self.t0} seconds')
 
     @asyncio.coroutine
     def scan(self, targets=None, desc_timeout=2, desc_retries=2, bus_timeout=2,
@@ -617,9 +618,10 @@ class KnxMap(object):
         if targets:
             self.set_targets(targets)
         if self.medium == 'net':
-            workers = [asyncio.Task(self._knx_description_worker(), loop=self.loop)
-                       for _ in range(self.max_workers
-                                      if len(self.targets) > self.max_workers else len(self.targets))]
+            workers = [
+                asyncio.Task(self._knx_description_worker(), loop=self.loop)
+                for _ in range(min(len(self.targets), self.max_workers))
+            ]
             self.t0 = time.time()
             yield from self.q.join()
             self.t1 = time.time()
@@ -636,7 +638,7 @@ class KnxMap(object):
             if not self.testing:
                 for t in self.knx_gateways:
                     print_knx_target(t)
-            LOGGER.info('Scan took {} seconds'.format(self.t1 - self.t0))
+            LOGGER.info(f'Scan took {self.t1 - self.t0} seconds')
 
         elif self.medium == 'usb':
             if USB_SUPPORT:
@@ -664,15 +666,13 @@ class KnxMap(object):
                 LOGGER.trace_outgoing(report)
                 transport.write(report.report)
                 time.sleep(1)
-                r = transport.read()
-                if r:
+                if r := transport.read():
                     report = KnxHidReport(data=r)
                 else:
                     print('GOT NO RESPONSE')
                 for _ in range(5):
                     time.sleep(1)
-                    r = transport.read()
-                    if r:
+                    if r := transport.read():
                         report = KnxHidReport(data=r)
                     else:
                         print('GOT NO RESPONSE')
@@ -685,8 +685,10 @@ class KnxMap(object):
         self.desc_timeout = desc_timeout
         self.desc_retries = desc_retries
         self.iface = iface
-        workers = [asyncio.Task(self._knx_description_worker(), loop=self.loop)
-                   for _ in range(self.max_workers if len(self.targets) > self.max_workers else len(self.targets))]
+        workers = [
+            asyncio.Task(self._knx_description_worker(), loop=self.loop)
+            for _ in range(min(len(self.targets), self.max_workers))
+        ]
         self.t0 = time.time()
         yield from self.q.join()
         self.t1 = time.time()
